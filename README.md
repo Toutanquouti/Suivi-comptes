@@ -6,6 +6,7 @@ Une application mobile pour piloter ton budget à la main : tu notes tes dépens
 - **Bouton +** : saisie rapide, avec les opérations fréquentes en raccourcis.
 - **Analyse** : semaine, mois, trimestre, année ou dates libres, comparées à la période précédente, à la moyenne des 3 dernières ou à l'an dernier. Ce qui a changé par catégorie, calendrier des dépenses, 12 derniers mois.
 - **Bilan** : les indicateurs du mois avec leurs écarts M-1 et N-1, l'épargne mois par mois face à ton objectif, des conseils.
+- **Tes catégories** : crée les tiennes (nom, icône, couleur) et des sous-catégories, depuis *Mon budget* → *Gérer mes catégories*, ou directement pendant une saisie avec le bouton **Nouvelle**. Une sous-catégorie est comptée dans sa catégorie principale, avec son détail dans la fiche de la catégorie.
 
 L'appli fonctionne hors connexion. Il n'y a ni compte ni serveur : **tes données restent sur ton téléphone**. Le dépôt GitHub contient seulement le code, jamais tes dépenses.
 
@@ -60,6 +61,25 @@ Dans la version Claude du carnet : *Mon budget* → **Exporter en CSV**. Puis, d
 
 ---
 
+## Relier Tricount (facultatif)
+
+Chaque heure, GitHub récupère tes tricounts avec [tricount-extractor](https://github.com/wenceslas-sanchez/tricount-extractor). Il garde seulement **ta part** de chaque dépense (60 € de resto à trois comptent pour 20 €) et ignore les remboursements entre amis. Ces données sont **chiffrées** avant d'être publiées, parce que le dépôt est public. Seule ton appli, avec ta phrase secrète, peut les lire.
+
+1. **Ajoute les 3 secrets** dans le dépôt : **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
+   - `TRICOUNT_IDS` : l'identifiant de chaque tricount, c'est-à-dire le code à la fin de son lien de partage. S'il y en a plusieurs, sépare-les par un espace.
+   - `TRICOUNT_MOI` : ton nom, écrit exactement comme dans Tricount.
+   - `TRICOUNT_PHRASE` : une phrase secrète de ton choix (8 caractères minimum). Garde-la, l'appli te la demandera.
+2. **Lance une première fois** : onglet **Actions** → **Tricount** → **Run workflow**. Si GitHub demande d'activer les actions, accepte. Au bout d'une minute, un fichier `tricount.json.enc` apparaît dans le dépôt.
+3. **Dans l'appli** : *Mon budget* → *Tricount* → saisis ta phrase secrète → **Synchroniser maintenant**.
+
+Ensuite, tout est automatique : GitHub met à jour chaque heure, et l'appli récupère les nouveautés à chaque ouverture. Pour une mise à jour immédiate, relance **Run workflow**.
+
+À savoir :
+- Les dépenses Tricount portent la mention « Tricount » en commentaire. Ne les saisis pas aussi à la main, sinon elles compteraient deux fois.
+- Tu peux corriger leur catégorie dans l'appli, mais la synchronisation suivante reprendra la version Tricount.
+- tricount-extractor n'est pas un outil officiel de Tricount : si Tricount change son fonctionnement, l'action peut échouer (onglet **Actions**, croix rouge). Ton carnet garde alors les dernières données reçues.
+- Si l'action échoue, son journal affiche le nom des colonnes trouvées, jamais tes montants ni tes noms. Envoie ce journal à Claude pour adapter le script.
+
 ## Mettre à jour l'appli
 
 1. Dans le dépôt : **Add file** → **Upload files**, glisse le nouveau `index.html` (il remplace l'ancien), puis **Commit changes**.
@@ -76,3 +96,8 @@ Tes données ne sont pas touchées par une mise à jour.
 | `sw.js` | Fonctionnement hors connexion |
 | `icon-192.png`, `icon-512.png`, `icon-maskable.png` | Icônes Android et navigateur |
 | `apple-touch-icon.png` | Icône iPhone |
+| `.github/workflows/tricount.yml` | Récupération automatique de Tricount, chaque heure |
+| `outils/tricount_vers_carnet.py` | Calcul de ta part et chiffrement des données Tricount |
+| `tricount.json.enc` | Créé par GitHub : tes dépenses Tricount, chiffrées |
+
+**Envoi des dossiers `.github` et `outils`** : depuis un ordinateur, glisse-les avec les autres fichiers à l'étape 2. Le dossier `.github` est masqué par défaut : sur Mac, appuie sur Cmd+Maj+point dans le Finder pour l'afficher. Si l'envoi le refuse, crée le fichier à la main dans GitHub : **Add file** → **Create new file**, nomme-le `.github/workflows/tricount.yml` et colle son contenu.
